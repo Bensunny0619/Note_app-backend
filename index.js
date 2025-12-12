@@ -13,9 +13,15 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 const authRoutes = require('./src/routes/auth.routes');
 const noteRoutes = require('./src/routes/note.routes');
+const labelRoutes = require('./src/routes/label.routes');
+const reminderRoutes = require('./src/routes/reminder.routes');
+const userRoutes = require('./src/routes/user.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/labels', labelRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/user', userRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

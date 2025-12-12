@@ -4,11 +4,26 @@ const noteController = {
     async getAllNotes(req, res, next) {
         try {
             const userId = req.user.id;
-            const notes = await noteService.getAllNotes(userId);
+            const { page, limit, archived, pinned, labelId, search } = req.query;
 
-            res.status(200).json({
-                notes
-            });
+            // If search query is provided, use search function
+            if (search) {
+                const result = await noteService.searchNotes(userId, search, { page, limit });
+                return res.status(200).json(result);
+            }
+
+            // Otherwise get all notes with filters
+            const options = {
+                page,
+                limit,
+                archived: archived !== undefined ? archived === 'true' : undefined,
+                pinned: pinned !== undefined ? pinned === 'true' : undefined,
+                labelId
+            };
+
+            const result = await noteService.getAllNotes(userId, options);
+
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }
@@ -108,6 +123,72 @@ const noteController = {
             res.status(200).json({
                 message: 'Note pin status updated',
                 note
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async shareNote(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const noteId = req.params.id;
+            const { email, permission } = req.body;
+
+            if (!email) {
+                return res.status(400).json({
+                    error: 'Email is required'
+                });
+            }
+
+            const share = await noteService.shareNote(noteId, userId, email, permission);
+
+            res.status(200).json({
+                message: 'Note shared successfully',
+                share
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async unshareNote(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const { noteId, sharedUserId } = req.params;
+
+            await noteService.unshareNote(noteId, userId, sharedUserId);
+
+            res.status(200).json({
+                message: 'Note unshared successfully'
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async getSharedNotes(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const notes = await noteService.getSharedNotes(userId);
+
+            res.status(200).json({
+                notes
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async getNoteShares(req, res, next) {
+        try {
+            const userId = req.user.id;
+            const noteId = req.params.id;
+
+            const shares = await noteService.getNoteShares(noteId, userId);
+
+            res.status(200).json({
+                shares
             });
         } catch (error) {
             next(error);
