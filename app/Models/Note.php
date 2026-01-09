@@ -48,4 +48,14 @@ class Note extends Model
                     ->withPivot('permission')
                     ->withTimestamps();
     }
+
+    public function audioRecordings()
+    {
+        return $this->hasMany(NoteAudioRecording::class)->orderBy('position');
+    }
+
+    public function drawings()
+    {
+        return $this->hasMany(NoteDrawing::class)->orderBy('position');
+    }
 }

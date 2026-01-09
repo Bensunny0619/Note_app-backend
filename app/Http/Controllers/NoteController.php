@@ -7,6 +7,9 @@ use App\Models\Label;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Events\NoteCreated;
+use App\Events\NoteUpdated;
+use App\Events\NoteDeleted;
 
 class NoteController extends Controller
 {
@@ -70,6 +73,9 @@ class NoteController extends Controller
 
         $note = Auth::user()->notes()->create($request->all());
 
+        // Broadcast event
+        broadcast(new NoteCreated($note))->toOthers();
+
         return response()->json($note->load(['checklistItems', 'labels', 'images']), 201);
     }
 
@@ -107,6 +113,9 @@ class NoteController extends Controller
 
         $note->update($request->all());
 
+        // Broadcast event
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
+
         return response()->json($note->load(['checklistItems', 'labels', 'images']));
     }
 
@@ -116,7 +125,11 @@ class NoteController extends Controller
     public function destroy(string $id)
     {
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
+        $userId = $note->user_id;
         $note->delete();
+
+        // Broadcast event
+        broadcast(new NoteDeleted((int)$id, $userId))->toOthers();
 
         return response()->json(['message' => 'Note deleted successfully']);
     }
@@ -127,6 +140,7 @@ class NoteController extends Controller
     {
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->update(['is_pinned' => true]);
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Note pinned', 'note' => $note]);
     }
 
@@ -134,6 +148,7 @@ class NoteController extends Controller
     {
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->update(['is_pinned' => false]);
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Note unpinned', 'note' => $note]);
     }
 
@@ -141,6 +156,7 @@ class NoteController extends Controller
     {
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->update(['is_archived' => true]);
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Note archived', 'note' => $note]);
     }
 
@@ -148,6 +164,7 @@ class NoteController extends Controller
     {
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->update(['is_archived' => false]);
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Note unarchived', 'note' => $note]);
     }
 
@@ -156,6 +173,7 @@ class NoteController extends Controller
         $request->validate(['color' => 'required|string|max:7']);
         $note = Note::where('user_id', Auth::id())->findOrFail($id);
         $note->update(['color' => $request->color]);
+        broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Color updated', 'note' => $note]);
     }
 }

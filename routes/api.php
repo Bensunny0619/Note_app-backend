@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\AuthController;
 
 Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
@@ -11,6 +12,9 @@ Route::group(['middleware' => 'api', 'prefix' => 'auth'], function () {
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::get('me', [AuthController::class, 'me']);
 });
+
+// Broadcasting authentication
+Broadcast::routes(['middleware' => ['auth:api']]);
 
 Route::group(['middleware' => 'auth:api'], function () {
     // Notes
@@ -46,6 +50,14 @@ Route::group(['middleware' => 'auth:api'], function () {
     // Images
     Route::post('notes/{noteId}/images', [\App\Http\Controllers\NoteImageController::class, 'store']);
     Route::delete('note-images/{id}', [\App\Http\Controllers\NoteImageController::class, 'destroy']);
+
+    // Audio Recordings
+    Route::post('notes/{noteId}/audio', [\App\Http\Controllers\NoteAudioController::class, 'store']);
+    Route::delete('audio-recordings/{id}', [\App\Http\Controllers\NoteAudioController::class, 'destroy']);
+
+    // Drawings
+    Route::post('notes/{noteId}/drawings', [\App\Http\Controllers\NoteDrawingController::class, 'store']);
+    Route::delete('drawings/{id}', [\App\Http\Controllers\NoteDrawingController::class, 'destroy']);
 
     // Preferences
     Route::get('preferences', [\App\Http\Controllers\UserPreferenceController::class, 'show']);
