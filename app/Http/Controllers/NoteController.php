@@ -65,18 +65,63 @@ class NoteController extends Controller
             'color' => 'nullable|string|max:7',
             'is_pinned' => 'boolean',
             'is_archived' => 'boolean',
+            'audio_uri' => 'nullable|file|mimes:mp3,wav,ogg,m4a,aac|max:20480', // 20MB max
+            'drawing_base64' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $note = Auth::user()->notes()->create($request->all());
+        $note = Auth::user()->notes()->create($request->except(['audio_uri', 'drawing_base64']));
+
+        // Handle Audio
+        if ($request->hasFile('audio_uri')) {
+            $file = $request->file('audio_uri');
+            $path = $file->store('note-audio', 'public');
+            
+            $note->audioRecordings()->create([
+                'audio_path' => $path,
+                'audio_url' => asset('storage/' . $path),
+                'format' => $file->getClientOriginalExtension(),
+                'file_size' => $file->getSize(),
+                'duration' => $request->audio_duration ?? 0,
+            ]);
+        }
+
+        // Handle Drawing (Base64)
+        if ($request->has('drawing_base64') && !empty($request->drawing_base64)) {
+            $image = $request->drawing_base64;
+            // Allow string to contain data URI prefix or just base64
+            if (preg_match('/^data:image\/(\w+);base64,/', $image, $type)) {
+                $image = substr($image, strpos($image, ',') + 1);
+                $type = strtolower($type[1]); // jpg, png, gif
+                if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
+                    $type = 'png';
+                }
+            } else {
+                $type = 'png';
+            }
+
+            $image = str_replace(' ', '+', $image);
+            $imageName = 'drawing_' . time() . '.' . $type;
+            $path = 'note-drawings/' . $imageName;
+            
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, base64_decode($image));
+
+            $note->drawings()->create([
+                'drawing_path' => $path,
+                'drawing_url' => asset('storage/' . $path),
+                'canvas_width' => $request->canvas_width ?? 800,
+                'canvas_height' => $request->canvas_height ?? 600,
+                'format' => $type,
+            ]);
+        }
 
         // Broadcast event
-        broadcast(new NoteCreated($note))->toOthers();
+        broadcast(new NoteCreated($note->refresh()))->toOthers();
 
-        return response()->json($note->load(['checklistItems', 'labels', 'images']), 201);
+        return response()->json($note->load(['checklistItems', 'labels', 'images', 'audioRecordings', 'drawings']), 201);
     }
 
     /**
