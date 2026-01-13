@@ -20,7 +20,7 @@ class NoteUpdated implements ShouldBroadcast
      */
     public function __construct(Note $note)
     {
-        $this->note = $note->load(['checklistItems', 'labels', 'images', 'reminder']);
+        $this->note = $note->load(['checklistItems', 'labels', 'images', 'reminder', 'audioRecordings', 'drawings']);
     }
 
     /**

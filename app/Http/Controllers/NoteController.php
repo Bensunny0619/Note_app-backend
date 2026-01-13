@@ -48,11 +48,13 @@ class NoteController extends Controller
               ->orderBy('position', 'asc')
               ->orderBy('created_at', 'desc');
 
-        $notes = $query->with(['checklistItems', 'labels', 'images', 'reminder', 'sharedWith'])
+        $notes = $query->with(['checklistItems', 'labels', 'images', 'reminder', 'sharedWith', 'audioRecordings', 'drawings'])
                        ->paginate(20);
 
         return response()->json($notes);
     }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -129,11 +131,11 @@ class NoteController extends Controller
      */
     public function show(string $id)
     {
-        $note = Note::with(['checklistItems', 'labels', 'images', 'reminder', 'sharedWith'])
+        $notes = Note::with(['checklistItems', 'labels', 'images', 'reminder', 'sharedWith', 'audioRecordings', 'drawings'])
                     ->where('user_id', Auth::id())
                     ->findOrFail($id);
 
-        return response()->json($note);
+        return response()->json($notes);
     }
 
     /**
