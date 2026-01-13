@@ -223,4 +223,44 @@ class NoteController extends Controller
         broadcast(new NoteUpdated($note->fresh()))->toOthers();
         return response()->json(['message' => 'Color updated', 'note' => $note]);
     }
+
+    public function uploadAudio(Request $request, $id)
+    {
+        $note = Note::where('user_id', Auth::id())->findOrFail($id);
+        if ($request->hasFile('audio')) {
+            $file = $request->file('audio');
+            $path = $file->store('note-audio', 'public');
+            
+            $recording = $note->audioRecordings()->create([
+                'audio_path' => $path,
+                'audio_url' => asset('storage/' . $path),
+                'format' => $file->getClientOriginalExtension(),
+                'file_size' => $file->getSize(),
+                'duration' => $request->duration ?? 0,
+            ]);
+            
+            return response()->json($recording, 201);
+        }
+        return response()->json(['error' => 'No audio file provided'], 422);
+    }
+
+    public function uploadDrawing(Request $request, $id)
+    {
+        $note = Note::where('user_id', Auth::id())->findOrFail($id);
+        if ($request->hasFile('drawing')) {
+            $file = $request->file('drawing');
+            $path = $file->store('note-drawings', 'public');
+            
+            $drawing = $note->drawings()->create([
+                'drawing_path' => $path,
+                'drawing_url' => asset('storage/' . $path),
+                'canvas_width' => $request->width ?? 800,
+                'canvas_height' => $request->height ?? 600,
+                'format' => 'png', 
+            ]);
+            
+            return response()->json($drawing, 201);
+        }
+        return response()->json(['error' => 'No drawing file provided'], 422);
+    }
 }

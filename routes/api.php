@@ -52,11 +52,11 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::delete('note-images/{id}', [\App\Http\Controllers\NoteImageController::class, 'destroy']);
 
     // Audio Recordings
-    Route::post('notes/{noteId}/audio', [\App\Http\Controllers\NoteAudioController::class, 'store']);
+    Route::post('notes/{noteId}/audio', [\App\Http\Controllers\NoteController::class, 'uploadAudio']);
     Route::delete('audio-recordings/{id}', [\App\Http\Controllers\NoteAudioController::class, 'destroy']);
 
     // Drawings
-    Route::post('notes/{noteId}/drawings', [\App\Http\Controllers\NoteDrawingController::class, 'store']);
+    Route::post('notes/{noteId}/drawings', [\App\Http\Controllers\NoteController::class, 'uploadDrawing']);
     Route::delete('drawings/{id}', [\App\Http\Controllers\NoteDrawingController::class, 'destroy']);
 
     // Preferences
